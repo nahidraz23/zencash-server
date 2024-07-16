@@ -33,8 +33,28 @@ async function run () {
 
     const usersCollection = client.db('zencashDB').collection('users')
 
+    app.post('/users', async (req, res) => {
+      const {email, pin} = req.body;
+      const query = { email: email }
+      const result = await usersCollection.findOne(query)
+      const { pass } = result
+      const decoded = await bcrypt.compare(pin, pass)
+      if(decoded){
+        return res.send("success");
+      }
+      else{
+        return res.send("failed");
+      }
+    })
+
     app.post('/user', async (req, res) => {
       const { name, email, mobile, pin } = req.body
+      const existingUser = await usersCollection.findOne(query)
+
+      if (existingUser) {
+        return res.status(409).send({ message: 'Email already exist' })
+      }
+
       const pass = await bcrypt.hash(pin, saltRounds)
       const user = { name, email, mobile, pass }
       const result = await usersCollection.insertOne(user)
